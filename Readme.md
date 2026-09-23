@@ -44,3 +44,47 @@ You are free to use any frameworks/NuGet packages that you see fit. You should p
 Feel free to use code comments to describe your changes. You are also welcome to update this readme with any important details for us to consider.
 
 Once you have completed the exercise either ensure your repository is available publicly or contact the hiring manager to set up a private share.
+
+## Implementation Notes
+
+### Design Refactor
+
+`RebateService` : refactored to separate rebate calculation logic from service. (SOLID S)
+
+Each incentive type implements `IRebateCalculator`:
+- `FixedCashAmountCalculator`
+- `FixedRateRebateCalculator`
+- `AmountPerUomCalculator`
+
+Additional incentive types can be added by implementing another `IRebateCalculator` (SOLID O)
+
+`RebateService` : retrieves the rebate and product, selects the calculator matching the rebate's incentive type, and stores the result when the calculation succeeds. (SOLID D)
+
+`IRebateDataStore` and `IProductDataStore` : refactored so the data stores are provided through DI  rather than being created directly by the service. 
+Allows its dependencies to be replaced without changing the calculation logic. (Testing)
+
+### Validation
+
+Calculation Rules:
+- Fixed cash amount : requires non-zero rebate amount.
+- Fixed rate rebate : requires non-zero product price, rebate percentage, and volume.
+- Amount per unit : requires non-zero rebate amount and volume.
+- Product must support rebate's incentive type.
+- Missing rebates or products return failure.
+
+The original rules check for zero values rather than requiring positive values. (Intentional?) 
+This behavior was intentionally preserved.
+
+### Build and Test
+
+From the repository root:
+
+```bash
+dotnet build
+dotnet test
+```
+Runner:
+
+```bash
+dotnet run --project Smartwyre.DeveloperTest.Runner
+```
