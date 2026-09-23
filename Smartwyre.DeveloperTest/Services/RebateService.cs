@@ -1,15 +1,34 @@
 ﻿using Smartwyre.DeveloperTest.Data;
 using Smartwyre.DeveloperTest.Types;
+using System;
 
 namespace Smartwyre.DeveloperTest.Services;
 
 public class RebateService : IRebateService
 {
+    private readonly IRebateDataStore rebateDataStore;
+    private readonly IProductDataStore productDataStore;
+
+    // refactor for DI: accept interfaces to use real stores OR test/mock stores
+    public RebateService(IRebateDataStore rebateDataStore, IProductDataStore productDataStore)
+    {
+        //throw for missing dependencies
+        if (rebateDataStore == null)
+        {
+            throw new ArgumentNullException(nameof(rebateDataStore));
+        }
+
+        if (productDataStore == null)
+        {
+            throw new ArgumentNullException(nameof(productDataStore));
+        }
+
+        this.rebateDataStore = rebateDataStore;
+        this.productDataStore = productDataStore;
+    }
+
     public CalculateRebateResult Calculate(CalculateRebateRequest request)
     {
-        var rebateDataStore = new RebateDataStore();
-        var productDataStore = new ProductDataStore();
-
         Rebate rebate = rebateDataStore.GetRebate(request.RebateIdentifier);
         Product product = productDataStore.GetProduct(request.ProductIdentifier);
 
@@ -90,8 +109,8 @@ public class RebateService : IRebateService
 
         if (result.Success)
         {
-            var storeRebateDataStore = new RebateDataStore();
-            storeRebateDataStore.StoreCalculationResult(rebate, rebateAmount);
+            // reuse the injected store for both lookup and persistence
+            rebateDataStore.StoreCalculationResult(rebate, rebateAmount);
         }
 
         return result;
